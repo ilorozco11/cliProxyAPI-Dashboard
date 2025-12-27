@@ -156,7 +156,7 @@ func (h *Handler) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Accept either Authorization: Bearer <key> or X-Management-Key
+		// Accept either Authorization: Bearer <key>, X-Management-Key header, or ?key= query param
 		var provided string
 		if ah := c.GetHeader("Authorization"); ah != "" {
 			parts := strings.SplitN(ah, " ", 2)
@@ -168,6 +168,10 @@ func (h *Handler) Middleware() gin.HandlerFunc {
 		}
 		if provided == "" {
 			provided = c.GetHeader("X-Management-Key")
+		}
+		// Fallback to query param (needed for export/download endpoints opened as direct links)
+		if provided == "" {
+			provided = c.Query("key")
 		}
 
 		if provided == "" {

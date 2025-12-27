@@ -6,11 +6,20 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)
 
+[![GitHub Sponsor](https://img.shields.io/badge/Sponsor-❤️-ea4aaa?style=for-the-badge&logo=github-sponsors)](https://github.com/sponsors/0xAstroAlpha)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-☕-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/astroalpha)
+
+[![GitHub Stars](https://img.shields.io/github/stars/0xAstroAlpha/cliProxyAPI-Dashboard?style=flat-square&logo=github)](https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/0xAstroAlpha/cliProxyAPI-Dashboard?style=flat-square&logo=github)](https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/0xAstroAlpha/cliProxyAPI-Dashboard?style=flat-square&logo=github)](https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard/issues)
+[![Contributors](https://img.shields.io/github/contributors/0xAstroAlpha/cliProxyAPI-Dashboard?style=flat-square&logo=github)](https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard/graphs/contributors)
+
 **A modern, beautiful dashboard for managing your CLIProxy instances**
 
 [Dashboard Features](#-dashboard-features) • [CLIProxy Features](#-cliproxy-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Support](#-support--donations)
 
 </div>
+
 
 ![CLIProxy Dashboard Preview](docs/Homepage.jpg)
 

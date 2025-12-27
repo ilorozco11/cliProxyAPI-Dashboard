@@ -1185,7 +1185,27 @@
 </div>
 
 <script>
-  let MANAGEMENT_KEY = localStorage.getItem('mgmt_key') || 'test-secret-key';
+  // Dynamic Auth Logic
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlKey = urlParams.get('key');
+  if (urlKey) {
+    localStorage.setItem('mgmt_key', urlKey);
+  }
+
+  let MANAGEMENT_KEY = localStorage.getItem('mgmt_key');
+
+  if (!MANAGEMENT_KEY) {
+    // Small timeout to Ensure UI renders first or just prompt
+    MANAGEMENT_KEY = prompt("🔑 Authentication Required\n\nPlease enter your Management Secret Key securely:", "");
+    if (MANAGEMENT_KEY) {
+      localStorage.setItem('mgmt_key', MANAGEMENT_KEY);
+    }
+  }
+
+  if (!MANAGEMENT_KEY) {
+    // Fallback to prevent null reference errors, but UI will likely fail nicely or auth check will catch it
+    console.warn("No management key provided. Dashboard features will be limited.");
+  }
   let logPollInterval = null;
   let autoRefreshInterval = null;
   let latestLogTimestamp = 0;
