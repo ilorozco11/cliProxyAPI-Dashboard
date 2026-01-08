@@ -12,9 +12,10 @@
         <div class="header">
             <div class="logo">🚀</div>
             <h1>Antigravity Auth</h1>
-            <p class="subtitle">Generate auth JSON for CLI Proxy</p>
+            <p class="subtitle">Auto-detect OAuth Callback</p>
         </div>
 
+        <!-- Login Section -->
         <div id="login-section">
             <button id="login-btn" class="btn-primary">
                 <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
@@ -29,28 +30,35 @@
                 </svg>
                 Login with Google
             </button>
+            <p class="hint">Extension will auto-detect when login is complete</p>
         </div>
 
+        <!-- Loading Section -->
         <div id="loading-section" class="hidden">
             <div class="spinner"></div>
-            <p>Authenticating...</p>
+            <p id="status-text">Waiting for login...</p>
         </div>
 
+        <!-- Success Section -->
         <div id="success-section" class="hidden">
             <div class="success-icon">✅</div>
             <h2>Authentication Successful!</h2>
             <p id="user-email" class="email"></p>
+
+            <div id="token-info" class="token-info hidden"></div>
+
             <button id="download-btn" class="btn-success">
                 📥 Download Auth JSON
             </button>
             <button id="logout-btn" class="btn-secondary">
-                Start Over
+                Login Another Account
             </button>
         </div>
 
+        <!-- Error Section -->
         <div id="error-section" class="hidden">
             <div class="error-icon">❌</div>
-            <h2>Authentication Failed</h2>
+            <h2>Error</h2>
             <p id="error-message" class="error-text"></p>
             <button id="retry-btn" class="btn-secondary">
                 Try Again
@@ -58,7 +66,7 @@
         </div>
 
         <footer>
-            <p>Antigravity Auth Generator v1.0</p>
+            <p>Antigravity Auth v3.0 (Auto-detect)</p>
         </footer>
     </div>
 
