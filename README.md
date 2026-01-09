@@ -140,39 +140,88 @@ CLIProxyAPI includes integrated support for [Amp CLI](https://ampcode.com) and A
 
 ## 🚀 Quick Start
 
-### Option 1: Using Docker (Recommended)
-The easiest way to run the dashboard and proxy.
+### Prerequisites
+- **Docker** (recommended) or **Go 1.21+**
+- A terminal/command line
+
+---
+
+### Step 1: Clone the Repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard.git
 cd cliProxyAPI-Dashboard
+```
 
-# Create config from example
+---
+
+### Step 2: Create Configuration File
+
+```bash
 cp config.example.yaml config.yaml
+```
 
-# ⚠️ IMPORTANT: Edit config.yaml and change the secret-key
-# The default key is 'setup-secret-key' - change it to your own secure key!
-nano config.yaml  # or use your preferred editor
+---
 
-# Build and run with Docker Compose
+### Step 3: Review Key Configuration (Optional)
+
+The default `config.yaml` is ready to use with these settings:
+
+| Setting | Default Value | Description |
+|---------|---------------|-------------|
+| `remote-management.secret-key` | `setup-secret-key` | Password to access the dashboard |
+| `remote-management.allow-remote` | `true` | Allow access from any IP |
+| `api-keys[0]` | `sk-antigravity-client-key` | API key for making AI requests |
+| `logging-to-file` | `true` | Enable logs tab in dashboard |
+| `usage-statistics-enabled` | `true` | Enable activity tracking |
+
+> [!TIP]
+> For production, change `secret-key` to a strong password!
+
+---
+
+### Step 4: Build and Run with Docker
+
+```bash
 docker-compose up -d --build
 ```
 
-### Option 2: Using Go
-Direct execution on your local machine.
+Wait for the build to complete (first time may take 2-3 minutes).
+
+---
+
+### Step 5: Access the Dashboard
+
+Open your browser and go to:
+
+**🌐 [http://localhost:8317/management.html](http://localhost:8317/management.html)**
+
+When prompted, enter the secret key: `setup-secret-key`
+
+---
+
+### Step 6: Test the API
+
+Use curl to verify the API is working:
 
 ```bash
-# Clone the repository
-git clone https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard.git
-cd cliProxyAPI-Dashboard
+curl -X POST http://localhost:8317/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-antigravity-client-key" \
+  -d '{
+    "model": "gemini-2.5-flash",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
 
-# Create config from example
-cp config.example.yaml config.yaml
+> [!NOTE]
+> The API acts as a proxy. You need to configure AI provider credentials (Gemini, Claude, etc.) in the dashboard's **Config** tab or via `config.yaml` for actual AI responses.
 
-# ⚠️ IMPORTANT: Edit config.yaml and change the secret-key
-nano config.yaml
+---
 
+### Alternative: Run with Go
+
+```bash
 # Install dependencies
 go mod download
 
@@ -180,28 +229,36 @@ go mod download
 go run cmd/server/main.go
 ```
 
-### 📺 Access the Dashboard
-Once the server is running, the dashboard is available at:
-**[http://localhost:8317/management.html](http://localhost:8317/management.html)**
+---
 
-> [!IMPORTANT]
-> **You MUST configure a `secret-key` in your `config.yaml` to access the dashboard!**
->
-> ```yaml
-> remote-management:
->   secret-key: "your-secure-key-here"  # Change this!
-> ```
->
-> When you first open the dashboard, you'll be prompted to enter this key.
+## 🔧 Troubleshooting
 
-### 🔧 Troubleshooting
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| **Dashboard shows 404** | `secret-key` is empty | Set `secret-key` in `config.yaml` |
+| **Popup keeps asking for key** | `allow-remote: false` | Set `allow-remote: true` in `config.yaml` |
+| **Logs tab shows 400 error** | `logging-to-file: false` | Set `logging-to-file: true` |
+| **Activity tab is empty** | `usage-statistics-enabled: false` | Set `usage-statistics-enabled: true` |
+| **Playground returns 401** | Wrong API key | Use `sk-antigravity-client-key` or add your key to `api-keys` |
+| **Dashboard looks different** | Auto-update overwrote files | Ensure `MANAGEMENT_AUTO_UPDATE: "false"` in `docker-compose.yml` |
+| **Changes not applying** | Old Docker image | Run `docker-compose up -d --build` |
 
-| Issue | Solution |
-|-------|----------|
-| **Dashboard shows 404** | Make sure `secret-key` is set in `config.yaml` |
-| **API calls fail with 401** | Enter the correct secret key when prompted |
-| **Dashboard looks different** | Ensure `MANAGEMENT_AUTO_UPDATE: "false"` is set in `docker-compose.yml` |
-| **Changes not reflecting** | Run `docker-compose up -d --build` to rebuild the image |
+---
+
+## 📡 API Endpoints
+
+Once running, the proxy provides these OpenAI-compatible endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | Chat completions (GPT/Claude/Gemini) |
+| `/v1/models` | GET | List available models |
+| `/v1/completions` | POST | Text completions |
+| `/management.html` | GET | Dashboard UI |
+
+**Base URL:** `http://localhost:8317`
+
+**Authentication:** `Authorization: Bearer <your-api-key>`
 
 ---
 
