@@ -27,7 +27,7 @@ services:
       - ./config.yaml:/CLIProxyAPI/config.yaml
       - ${HOME}/.cli-proxy-api:/root/.cli-proxy-api
       - ./logs:/CLIProxyAPI/logs
-      # Static files are baked into the image via Dockerfile COPY command
-      # Uncomment below line ONLY for hot-reload development:
+      # Mount local static files to use custom dashboard
+      # This ensures your custom management.html is used instead of the one baked into the image
       - ./static:/CLIProxyAPI/static
     restart: unless-stopped

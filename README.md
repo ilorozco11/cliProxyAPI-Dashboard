@@ -151,8 +151,12 @@ cd cliProxyAPI-Dashboard
 # Create config from example
 cp config.example.yaml config.yaml
 
-# Run with Docker Compose
-docker-compose up -d
+# ⚠️ IMPORTANT: Edit config.yaml and change the secret-key
+# The default key is 'setup-secret-key' - change it to your own secure key!
+nano config.yaml  # or use your preferred editor
+
+# Build and run with Docker Compose
+docker-compose up -d --build
 ```
 
 ### Option 2: Using Go
@@ -163,6 +167,12 @@ Direct execution on your local machine.
 git clone https://github.com/0xAstroAlpha/cliProxyAPI-Dashboard.git
 cd cliProxyAPI-Dashboard
 
+# Create config from example
+cp config.example.yaml config.yaml
+
+# ⚠️ IMPORTANT: Edit config.yaml and change the secret-key
+nano config.yaml
+
 # Install dependencies
 go mod download
 
@@ -172,15 +182,26 @@ go run cmd/server/main.go
 
 ### 📺 Access the Dashboard
 Once the server is running, the dashboard is available at:
-**[http://localhost:8317/static/management.html](http://localhost:8317/static/management.html)**
+**[http://localhost:8317/management.html](http://localhost:8317/management.html)**
 
 > [!IMPORTANT]
-> You **MUST** set a `secret-key` in your `config.yaml` under `remote-management` to access the dashboard.
+> **You MUST configure a `secret-key` in your `config.yaml` to access the dashboard!**
 >
 > ```yaml
 > remote-management:
->   secret-key: "your-secure-key"
+>   secret-key: "your-secure-key-here"  # Change this!
 > ```
+>
+> When you first open the dashboard, you'll be prompted to enter this key.
+
+### 🔧 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **Dashboard shows 404** | Make sure `secret-key` is set in `config.yaml` |
+| **API calls fail with 401** | Enter the correct secret key when prompted |
+| **Dashboard looks different** | Ensure `MANAGEMENT_AUTO_UPDATE: "false"` is set in `docker-compose.yml` |
+| **Changes not reflecting** | Run `docker-compose up -d --build` to rebuild the image |
 
 ---
 
