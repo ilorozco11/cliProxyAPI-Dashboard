@@ -27,6 +27,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/interfaces"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/misc"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v6/internal/runtime/executor"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/util"
 	sdkAuth "github.com/router-for-me/CLIProxyAPI/v6/sdk/auth"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v6/sdk/cliproxy/auth"
@@ -429,6 +430,10 @@ func (h *Handler) buildAuthFileEntry(auth *coreauth.Auth) gin.H {
 	}
 	if claims := extractCodexIDTokenClaims(auth); claims != nil {
 		entry["id_token"] = claims
+	}
+	// Include Antigravity quota if available
+	if strings.ToLower(auth.Provider) == "antigravity" && auth.AntigravityQuota != nil {
+		entry["antigravity_quota"] = auth.AntigravityQuota
 	}
 	return entry
 }
@@ -1460,7 +1465,7 @@ func (h *Handler) RequestAntigravityToken(c *gin.Context) {
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			scheme = "https"
 		}
-		
+
 		// If accessing via the same port as the server, we can use the direct callback
 		// This avoids the need for a separate port forwarder
 		redirectURI = fmt.Sprintf("%s://%s/antigravity/callback", scheme, host)
@@ -1488,9 +1493,9 @@ func (h *Handler) RequestAntigravityToken(c *gin.Context) {
 		// However, if the dynamic URI failed logic?
 		// Actually, if we use the dynamic URI pointing to /antigravity/callback, we DO NOT need the forwarder.
 		// The forwarder was only needed because we were targeting localhost:51121.
-		
+
 		if redirectURI == fmt.Sprintf("http://localhost:%d/oauth-callback", antigravityCallbackPort) {
-             // Logic for forwarder...
+			// Logic for forwarder...
 			targetURL, errTarget := h.managementCallbackURL("/antigravity/callback")
 			if errTarget != nil {
 				log.WithError(errTarget).Error("failed to compute antigravity callback target")
@@ -2311,4 +2316,33 @@ func (h *Handler) GetAuthStatus(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "wait"})
+}
+
+// GetAntigravityQuota retrieves quota information for an Antigravity account
+func (h *Handler) GetAntigravityQuota(c *gin.Context) {
+	accountID := c.Query("account_id")
+	if accountID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "account_id required"})
+		return
+	}
+
+	auth, found := h.authManager.GetByID(accountID)
+	if !found || auth == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
+		return
+	}
+
+	if strings.ToLower(auth.Provider) != "antigravity" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "not an antigravity account"})
+		return
+	}
+
+	quota, err := executor.FetchAntigravityQuota(c.Request.Context(), auth, h.cfg)
+	if err != nil {
+		log.Errorf("Failed to fetch Antigravity quota for account %s: %v", accountID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, quota)
 }

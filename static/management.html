@@ -1541,6 +1541,138 @@
     }).format(number);
   }
 
+  // ==================== Antigravity Quota Helpers ====================
+  
+  // Format quota percentage with color coding
+  function formatQuotaPercentage(fraction) {
+    if (fraction == null) return { text: 'N/A', color: 'text-gray-400', emoji: '⚪' };
+    const pct = Math.round(fraction * 100);
+    if (pct >= 70) return { text: `${pct}%`, color: 'text-green-400', emoji: '🟢' };
+    if (pct >= 40) return { text: `${pct}%`, color: 'text-yellow-400', emoji: '🟡' };
+    return { text: `${pct}%`, color: 'text-red-400', emoji: '🔴' };
+  }
+
+  // Format reset time in human-readable format
+  function formatResetTime(resetTime) {
+    if (!resetTime) return 'Unknown';
+    const now = Date.now();
+    const reset = new Date(resetTime).getTime();
+    const diffSec = Math.floor((reset - now) / 1000);
+    
+    if (diffSec <= 0) return 'Soon';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+    return `${Math.floor(diffSec / 86400)}d`;
+  }
+
+  // Get subscription tier badge HTML
+  function getSubscriptionBadge(tier) {
+    if (!tier) return '';
+    tier = tier.toUpperCase();
+    if (tier === 'ULTRA') return '<span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">⚡ ULTRA</span>';
+    if (tier === 'PRO') return '<span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">💎 PRO</span>';
+    return '<span class="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 border border-gray-500/30">FREE</span>';
+  }
+
+  // Fetch quota for a specific account
+  async function fetchAccountQuota(accountID) {
+    const headers = { 'Authorization': `Bearer ${MANAGEMENT_KEY}` };
+    try {
+      const res = await fetch(`/v0/management/antigravity-quota?account_id=${accountID}&key=${MANAGEMENT_KEY}`, { headers });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.error('Failed to fetch quota:', e);
+      return null;
+    }
+  }
+
+  // Render quota section HTML
+  function renderQuotaSection(quota) {
+    if (!quota || !quota.models) return '';
+    
+    // Sort models by priority: pro > flash > claude
+    const priority = { 'pro': 1, 'flash': 2, 'claude': 3 };
+    const modelEntries = Object.entries(quota.models)
+      .filter(([name, _]) => name.includes('pro') || name.includes('flash') || name.includes('claude'))
+      .sort((a, b) => {
+        const aKey = a[0].includes('pro') ? 'pro' : a[0].includes('flash') ? 'flash' : 'claude';
+        const bKey = b[0].includes('pro') ? 'pro' : b[0].includes('flash') ? 'flash' : 'claude';
+        return (priority[aKey] || 99) - (priority[bKey] || 99);
+      })
+      .slice(0, 3);
+    
+    if (modelEntries.length === 0) return '';
+    
+    let html = '<div class="mt-3 pt-3 border-t border-white/10"><div class="text-xs text-muted mb-2">QUOTA:</div>';
+    
+    modelEntries.forEach(([modelName, modelQuota]) => {
+      const shortName = modelName.includes('pro') ? 'pro' : modelName.includes('flash') ? 'flash' : 'claude';
+      const quotaInfo = formatQuotaPercentage(modelQuota.remaining_fraction);
+      const resetTime = formatResetTime(modelQuota.reset_time);
+      const barWidth = Math.round((modelQuota.remaining_fraction || 0) * 100);
+      
+      html += `
+        <div class="mb-2">
+          <div class="flex justify-between items-center text-xs mb-1">
+            <span class="font-mono">${quotaInfo.emoji} ${shortName}</span>
+            <span class="${quotaInfo.color} font-bold">${quotaInfo.text}</span>
+            <span class="text-muted">⏱ ${resetTime}</span>
+          </div>
+          <div class="w-full bg-white/10 rounded-full h-1.5">
+            <div class="${quotaInfo.color.replace('text-', 'bg-')} h-1.5 rounded-full transition-all" style="width: ${barWidth}%"></div>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    return html;
+  }
+
+  // Update a specific card's quota section without full re-render
+  function updateCardQuota(accountId, quota) {
+    const card = document.querySelector(`[data-account-id="${accountId}"]`);
+    if (!card) {
+      console.warn(`[Quota] Card not found for account ${accountId}`);
+      return;
+    }
+    
+    // Remove old quota section
+    const oldQuota = card.querySelector('.mt-3.pt-3.border-t');
+    if (oldQuota) oldQuota.remove();
+    
+    // Add new quota section
+    const quotaHTML = renderQuotaSection(quota);
+    if (quotaHTML) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = quotaHTML;
+      card.appendChild(tempDiv.firstElementChild);
+    }
+    
+    // Add tier badge if not present
+    if (quota.subscription_tier) {
+      const badgeContainer = card.querySelector('.flex.items-center.gap-2');
+      const existingTierBadge = badgeContainer?.querySelector('span[class*="purple-"], span[class*="blue-"]');
+      
+      if (badgeContainer && !existingTierBadge) {
+        const tierBadgeHTML = getSubscriptionBadge(quota.subscription_tier);
+        if (tierBadgeHTML) {
+          const statusBadge = badgeContainer.querySelector('span');
+          if (statusBadge) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tierBadgeHTML;
+            statusBadge.insertAdjacentElement('afterend', tempDiv.firstElementChild);
+          }
+        }
+      }
+    }
+    
+    console.log(`[Quota] Updated card for account ${accountId}`);
+  }
+
+  // ==================== End Quota Helpers ====================
+
   async function fetchData() {
     const headers = { 'Authorization': `Bearer ${MANAGEMENT_KEY}` };
     try {
@@ -1622,13 +1754,21 @@
         const color = providerColors[f.provider] || 'bg-gray-900/40 border-gray-500/30';
         const card = document.createElement('div');
         card.className = `${color} border rounded-lg p-4 group hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/10 transition-all duration-200 relative`;
+        card.setAttribute('data-account-id', f.id);
         const statusBadge = getStatusBadge(f.status, f.disabled, f.unavailable);
         const refreshText = formatRelativeTime(f.last_refresh);
+        const tierBadge = f.provider.toLowerCase() === 'antigravity' && f.antigravity_quota 
+          ? getSubscriptionBadge(f.antigravity_quota.subscription_tier) 
+          : '';
+        const quotaSection = f.provider.toLowerCase() === 'antigravity' && f.antigravity_quota 
+          ? renderQuotaSection(f.antigravity_quota) 
+          : '';
         card.innerHTML = `
           <div class="flex justify-between items-start mb-2">
             <div class="font-bold truncate max-w-[60%]" title="${f.email || f.name}">${f.email || f.name}</div>
             <div class="flex items-center gap-2">
               ${statusBadge}
+              ${tierBadge}
               <button onclick="exportAccount('${f.name}', event)"
                 class="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 p-1 rounded transition-all mr-1"
                 title="Export account">
@@ -1646,6 +1786,7 @@
             </div>
           </div>
           <div class="text-xs text-muted">${f.provider}${refreshText ? ' • ' + refreshText : ''}</div>
+          ${quotaSection}
         `;
         authGrid.appendChild(card);
       });
@@ -2754,6 +2895,59 @@
       loadManagedKeys();
     }
   };
+
+  // ==================== Antigravity Quota Auto-Refresh ====================
+  
+  // Auto-refresh quota data every 10 minutes
+  let quotaRefreshTimer = null;
+
+  async function refreshAllQuotas() {
+    console.log('[Quota] Starting background fetch...');
+    const headers = { 'Authorization': `Bearer ${MANAGEMENT_KEY}` };
+    
+    try {
+      const res = await fetch(`/v0/management/auth-files?key=${MANAGEMENT_KEY}`, { headers });
+      const data = await res.json();
+      const files = data.files || [];
+      
+      const antigravityAccounts = files.filter(f => f.provider.toLowerCase() === 'antigravity');
+      console.log(`[Quota] Found ${antigravityAccounts.length} Antigravity accounts`);
+      
+      for (const account of antigravityAccounts) {
+        const quota = await fetchAccountQuota(account.id);
+        if (quota) {
+          console.log(`[Quota] Fetched for ${account.email || account.name}`);
+          // Update the card dynamically instead of full page reload
+          updateCardQuota(account.id, quota);
+        }
+        // Rate limit: 1 request per second
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      console.log('[Quota] Background fetch complete');
+    } catch (e) {
+      console.error('[Quota] Background fetch failed:', e);
+    }
+  }
+
+  function startQuotaAutoRefresh() {
+    if (quotaRefreshTimer) clearInterval(quotaRefreshTimer);
+    // Run every 10 minutes (600000ms)
+    quotaRefreshTimer = setInterval(refreshAllQuotas, 600000);
+    console.log('[Quota] Auto-refresh started (10min interval)');
+  }
+
+  // Start auto-refresh when page loads
+  window.addEventListener('load', () => {
+    startQuotaAutoRefresh();
+    // Also run immediately on load (with slight delay to let page render)
+    setTimeout(() => {
+      console.log('[Quota] Triggering initial background fetch...');
+      refreshAllQuotas();
+    }, 2000); // 2 second delay
+  });
+
+  // ==================== End Quota Auto-Refresh ====================
 </script>
 </body>
 

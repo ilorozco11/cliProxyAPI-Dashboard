@@ -25,6 +25,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/middleware"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/modules"
 	ampmodule "github.com/router-for-me/CLIProxyAPI/v6/internal/api/modules/amp"
+	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/ratelimit"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/config"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/database"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/logging"
@@ -38,7 +39,6 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v6/sdk/api/handlers/openai"
 	sdkAuth "github.com/router-for-me/CLIProxyAPI/v6/sdk/auth"
 	"github.com/router-for-me/CLIProxyAPI/v6/sdk/cliproxy/auth"
-	"github.com/router-for-me/CLIProxyAPI/v6/internal/api/ratelimit"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -354,7 +354,7 @@ func (s *Server) setupRoutes() {
 			},
 		})
 	})
-	
+
 	// Serve static files (e.g. for QR codes)
 	s.engine.Static("/static", "./static")
 
@@ -536,10 +536,7 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.PUT("/quota-exceeded/switch-preview-model", s.mgmt.PutSwitchPreviewModel)
 		mgmt.PATCH("/quota-exceeded/switch-preview-model", s.mgmt.PutSwitchPreviewModel)
 
-
-
 		// mgmt.PUT("/config", s.mgmt.PutConfig) // Not implemented yet
-
 
 		mgmt.GET("/api-keys", s.mgmt.GetAPIKeys)
 		mgmt.PUT("/api-keys", s.mgmt.PutAPIKeys)
@@ -639,6 +636,7 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.POST("/auth-files", s.mgmt.UploadAuthFile)
 		mgmt.POST("/auth-files/import", s.mgmt.ImportAllAuthFiles)
 		mgmt.DELETE("/auth-files", s.mgmt.DeleteAuthFile)
+		mgmt.GET("/antigravity-quota", s.mgmt.GetAntigravityQuota)
 		mgmt.POST("/vertex/import", s.mgmt.ImportVertexCredential)
 
 		mgmt.GET("/advanced-keys", s.mgmt.ListManagedKeys)
@@ -1129,9 +1127,8 @@ func AuthMiddleware(manager *sdkaccess.Manager) gin.HandlerFunc {
 					}
 				}
 
-
 				// We will implement RateLimiter in a separate step or file.
-				
+
 				// Success
 				c.Set("apiKey", "managed:"+managedKey.Label) // distinguishing prefix
 				c.Set("accessProvider", "managed")

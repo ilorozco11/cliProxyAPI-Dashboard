@@ -58,6 +58,8 @@ type Auth struct {
 	NextRetryAfter time.Time `json:"next_retry_after"`
 	// ModelStates tracks per-model runtime availability data.
 	ModelStates map[string]*ModelState `json:"model_states,omitempty"`
+	// AntigravityQuota holds detailed quota information for Antigravity accounts
+	AntigravityQuota *AntigravityQuotaData `json:"antigravity_quota,omitempty"`
 
 	// Runtime carries non-serialisable data used during execution (in-memory only).
 	Runtime any `json:"-"`
@@ -93,6 +95,28 @@ type ModelState struct {
 	Quota QuotaState `json:"quota"`
 	// UpdatedAt tracks the last update timestamp for this model state.
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AntigravityQuotaData holds quota information for Antigravity accounts
+type AntigravityQuotaData struct {
+	// Models maps model names to their quota information
+	Models map[string]*AntigravityModelQuota `json:"models,omitempty"`
+	// SubscriptionTier is the subscription level (ULTRA, PRO, FREE)
+	SubscriptionTier string `json:"subscription_tier,omitempty"`
+	// ProjectID is the Antigravity project identifier
+	ProjectID string `json:"project_id,omitempty"`
+	// FetchedAt is when this data was last retrieved
+	FetchedAt time.Time `json:"fetched_at,omitempty"`
+	// IsForbidden indicates if the account lacks permission to fetch quota
+	IsForbidden bool `json:"is_forbidden,omitempty"`
+}
+
+// AntigravityModelQuota represents quota information for a single model
+type AntigravityModelQuota struct {
+	// RemainingFraction is the quota remaining (0.0 to 1.0)
+	RemainingFraction float64 `json:"remaining_fraction"`
+	// ResetTime is when the quota resets
+	ResetTime time.Time `json:"reset_time,omitempty"`
 }
 
 // Clone shallow copies the Auth structure, duplicating maps to avoid accidental mutation.
